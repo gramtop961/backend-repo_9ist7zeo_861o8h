@@ -1,14 +1,12 @@
 import os
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
 from typing import List, Optional
-from bson import ObjectId
 
 from database import db, create_document, get_documents
 from schemas import Product, Order
 
-app = FastAPI(title="Florist Store API")
+app = FastAPI(title="Chenarae – Handmade Pipe-Cleaner Bouquets API")
 
 app.add_middleware(
     CORSMiddleware,
@@ -19,9 +17,94 @@ app.add_middleware(
 )
 
 
+@app.on_event("startup")
+def seed_products_on_startup():
+    try:
+        if db is None:
+            return
+        # If there are already products, skip seeding
+        if db["product"].count_documents({}) > 0:
+            return
+        seed_items = [
+            {
+                "title": "Blush Baby’s-Breath — Mini",
+                "description": "Tiny clustered blush blooms — airy, charming, gift-ready. Size 20–25 cm • Mini stems • Perfect for desks • Pastel blush",
+                "price": 18.0,
+                "category": "Bestsellers",
+                "image_url": "https://images.unsplash.com/photo-1519681393784-d120267933ba?q=80&w=2000&auto=format&fit=crop",
+                "tags": ["baby's breath", "mini", "blush", "gift", "pipe-cleaner"],
+                "in_stock": True,
+                "sku": "CH-MINI-BLUSH",
+                "stock_qty": 25,
+            },
+            {
+                "title": "Pastel Meadow — Mixed Bouquet",
+                "description": "Pastel roses, buds & greenery — full and soft. Size 30–40 cm • 7 stems • Ribbon wrap included",
+                "price": 48.0,
+                "category": "Bestsellers",
+                "image_url": "https://images.unsplash.com/photo-1464965911861-746a04b4bca6?q=80&w=2000&auto=format&fit=crop",
+                "tags": ["pastel", "mixed", "bouquet", "roses", "pipe-cleaner"],
+                "in_stock": True,
+                "sku": "CH-PASTEL-MEADOW",
+                "stock_qty": 12,
+            },
+            {
+                "title": "Lavender Dream — Tall Spray",
+                "description": "Elegant tall lavender-style stems for vases. Height 40–50 cm • 5 stems • Great for tall vases",
+                "price": 32.0,
+                "category": "Tall Sprays",
+                "image_url": "https://images.unsplash.com/photo-1491002052546-bf38f186af56?q=80&w=2000&auto=format&fit=crop",
+                "tags": ["lavender", "tall", "spray", "vase", "pipe-cleaner"],
+                "in_stock": True,
+                "sku": "CH-LAVENDER-DREAM",
+                "stock_qty": 18,
+            },
+            {
+                "title": "Peach Blossom — Bridal Posy",
+                "description": "Warm-toned bridal bouquet wrapped for ceremonies. Size 20–30 cm • Custom ribbon • Bulk wedding orders",
+                "price": 65.0,
+                "category": "Wedding & Events",
+                "image_url": "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?q=80&w=2000&auto=format&fit=crop",
+                "tags": ["peach", "bridal", "wedding", "posy", "pipe-cleaner"],
+                "in_stock": True,
+                "sku": "CH-PEACH-BLOSSOM",
+                "stock_qty": 8,
+            },
+            {
+                "title": "Custom Color Mix — Design Your Own",
+                "description": "Choose up to 3 colors — your bouquet, your way. Lead time 3–7 days • Ribbon wrap • Gift note option",
+                "price": 55.0,
+                "category": "Custom Colors",
+                "image_url": "https://images.unsplash.com/photo-1460634844282-68ad86a38133?q=80&w=2000&auto=format&fit=crop",
+                "tags": ["custom", "colors", "personalized", "gift"],
+                "in_stock": True,
+                "sku": "CH-CUSTOM-MIX",
+                "stock_qty": 100,
+            },
+            {
+                "title": "Gift Box Add-on — Wrap + Note",
+                "description": "Premium matte wrap + handwritten note. Protection wrap • Satin ribbon • Gift-ready",
+                "price": 8.0,
+                "category": "Add-ons",
+                "image_url": "https://images.unsplash.com/photo-1519681393784-d120267933ba?q=80&w=2000&auto=format&fit=crop",
+                "tags": ["gift", "wrap", "note", "add-on"],
+                "in_stock": True,
+                "sku": "CH-GIFT-BOX",
+                "stock_qty": 50,
+            },
+        ]
+        for item in seed_items:
+            try:
+                create_document("product", Product(**item))
+            except Exception:
+                pass
+    except Exception:
+        pass
+
+
 @app.get("/")
 def read_root():
-    return {"message": "Florist Store Backend Running"}
+    return {"message": "Chenarae Backend Running"}
 
 
 @app.get("/test")
@@ -76,14 +159,12 @@ async def list_products(category: Optional[str] = None, q: Optional[str] = None,
         if category:
             filter_dict["category"] = category
         if q:
-            # Search within title, description, tags
             filter_dict["$or"] = [
                 {"title": {"$regex": q, "$options": "i"}},
                 {"description": {"$regex": q, "$options": "i"}},
                 {"tags": {"$elemMatch": {"$regex": q, "$options": "i"}}}
             ]
         docs = get_documents("product", filter_dict, limit)
-        # Normalize ObjectIds to strings
         for d in docs:
             d["id"] = str(d.pop("_id"))
         return docs

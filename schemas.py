@@ -1,5 +1,5 @@
 """
-Database Schemas for Florist E-commerce
+Database Schemas for Florist E-commerce (Chenarae)
 
 Each Pydantic model represents a MongoDB collection. The collection name is the
 lowercased class name. For example: Product -> "product", Order -> "order".
@@ -11,16 +11,19 @@ from typing import List, Optional
 
 class Product(BaseModel):
     """
-    Products available in the florist store
+    Products available in the store
     Collection name: "product"
     """
-    title: str = Field(..., description="Product title, e.g., 'Rose Bouquet'")
+    title: str = Field(..., description="Product title, e.g., 'Blush Baby’s-Breath — Mini'")
     description: Optional[str] = Field(None, description="Detailed description")
     price: float = Field(..., ge=0, description="Price in USD")
-    category: str = Field(..., description="Category such as 'Bouquets', 'Plants', 'Gifts'")
+    category: str = Field(..., description="Category such as 'Bestsellers', 'Mini Bouquets', 'Wedding & Events'")
     image_url: Optional[str] = Field(None, description="Primary product image URL")
-    tags: List[str] = Field(default_factory=list, description="Searchable tags, e.g., ['roses', 'anniversary']")
+    tags: List[str] = Field(default_factory=list, description="Searchable tags")
     in_stock: bool = Field(True, description="Whether the item is currently in stock")
+    # Admin / Inventory
+    sku: Optional[str] = Field(None, description="Stock Keeping Unit")
+    stock_qty: int = Field(0, ge=0, description="Inventory quantity available")
 
 
 class OrderItem(BaseModel):
